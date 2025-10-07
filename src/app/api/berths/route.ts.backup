@@ -1,0 +1,168 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]/route'
+import { prisma } from '@/lib/db'
+
+// GET /api/berths - List all berths
+export async function GET() {
+  try {
+    console.log('🔍 BERTHS API: GET request received')
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      console.log('❌ BERTHS API: No session user')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get user's marina ID from session
+    const marinaId = (session.user as any).marinaId
+    console.log('🔍 BERTHS API: Marina ID from session:', marinaId)
+    
+    if (!marinaId) {
+      console.log('❌ BERTHS API: No marina ID in session')
+      return NextResponse.json({ error: 'User not associated with a marina' }, { status: 400 })
+    }
+
+    console.log('🔍 BERTHS API: About to query berths with marinaId:', marinaId)
+    
+    // First, let's check what columns actually exist in the berths table
+    try {
+      console.log('🔍 BERTHS API: Checking table structure...')
+      const tableInfo = await prisma.$queryRaw<any[]>`
+        SELECT COLUMN_NAME, DATA_TYPE 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_NAME = 'berths'
+        ORDER BY ORDINAL_POSITION
+      `
+      console.log('🔍 BERTHS API: Table structure:', tableInfo)
+    } catch (tableError) {
+      console.log('⚠️ BERTHS API: Could not check table structure:', tableError)
+    }
+    
+    let berths: any[] = []
+    
+    // Try enhanced query if all required tables exist
+    if (availableTables.includes('contracts') && availableTables.includes('boats') && availableTables.includes('owners')) {
+      try {
+        console.log('🔍 BERTHS API: Attempting enhanced query with contracts...')
+        berths = await prisma.$queryRaw<any[]>`
+          SELECT 
+            b.id,
+            b.berthNumber,
+            b.length,
+            b.beam,
+            b.isActive,
+            c.monthlyRate,
+            c.status as contractStatus,
+            c.startDate as contractStartDate,
+            c.endDate as contractEndDate,
+            c.notes as contractNotes,
+            boat.name as boatName,
+            boat.registration as boatRegistration,
+            owner.firstName as ownerFirstName,
+            owner.lastName as ownerLastName,
+            owner.email as ownerEmail,
+            CASE WHEN c.id IS NOT NULL AND c.status = 'ACTIVE' THEN 0 ELSE 1 END as isAvailable
+          FROM berths b
+          LEFT JOIN contracts c ON b.id = c.berthId AND c.status = 'ACTIVE'
+          LEFT JOIN boats boat ON c.boatId = boat.id
+          LEFT JOIN owners owner ON c.ownerId = owner.id
+          WHERE b.marinaId = ${marinaId} AND b.isActive = 1
+          ORDER BY b.berthNumber ASC
+        `
+        console.log('✅ BERTHS API: Enhanced query successful, count:', berths.length)
+        
+        // Transform enhanced data
+        berths = berths.map((berth) => ({
+          id: berth.id,
+          berthNumber: berth.berthNumber || `Berth ${berth.id}`,
+          length: berth.length,
+          beam: berth.beam,
+          isAvailable: berth.isAvailable === 1,
+          marinaId: marinaId,
+          isActive: berth.isAvailable === 1,
+          monthlyRate: berth.monthlyRate,
+          contractStatus: berth.contractStatus,
+          contractStartDate: berth.contractStartDate,
+          contractEndDate: berth.contractEndDate,
+          contractNotes: berth.contractNotes,
+          boatName: berth.boatName,
+          boatRegistration: berth.boatRegistration,
+          ownerFirstName: berth.ownerFirstName,
+          ownerLastName: berth.ownerLastName,
+          ownerEmail: berth.ownerEmail,
+          notes: null,
+          createdAt: null,
+          updatedAt: null
+        }))
+        
+      } catch (enhancedError) {
+        console.log('⚠️ BERTHS API: Enhanced query failed, falling back to basic query:', enhancedError)
+        // Fall through to basic query
+      }
+    }
+    
+    // If enhanced query failed or tables don't exist, use basic query
+    if (berths.length === 0) {
+      try {
+        // Try the query with the columns we think exist
+        console.log('🔍 BERTHS API: Attempting to query berths...')
+        berths = await prisma.$queryRaw<any[]>`
+          SELECT 
+            id,
+            berthNumber,
+            length,
+            beam,
+            isActive as isAvailable
+          FROM berths
+          WHERE marinaId = ${marinaId} AND isActive = 1
+          ORDER BY berthNumber ASC
+        `
+        console.log('✅ BERTHS API: Query successful, count:', berths.length)
+        
+        // Use the actual berthNumber from the database
+        berths = berths.map((berth) => ({
+          ...berth,
+          berthNumber: berth.berthNumber || `Berth ${berth.id}`
+        }))
+        
+      } catch (queryError) {
+        console.log('⚠️ BERTHS API: Query failed, trying alternative approach:', queryError)
+        
+        // Fallback: Use Prisma client
+        try {
+          const prismaBerths = await prisma.berth.findMany({
+            where: { 
+              marinaId,
+              isActive: true
+            },
+            orderBy: { id: 'asc' }
+          })
+          
+          console.log('✅ BERTHS API: Prisma client query successful, count:', prismaBerths.length)
+          
+          // Transform to match expected format
+          berths = prismaBerths.map((berth) => ({
+            id: berth.id,
+            berthNumber: (berth as any).berthNumber || `Berth ${berth.id}`,
+            length: berth.length,
+            beam: berth.beam,
+            isAvailable: berth.isActive
+          }))
+          
+        } catch (prismaError) {
+          console.error('❌ BERTHS API: All query methods failed:', { queryError, prismaError })
+          throw prismaError
+        }
+      }
+    }
+
+    return NextResponse.json(berths)
+  } catch (error) {
+    console.error('❌ BERTHS API: Error fetching berths:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch berths', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}

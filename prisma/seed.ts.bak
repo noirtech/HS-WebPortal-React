@@ -1,0 +1,229 @@
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('🌱 Starting database seeding...')
+
+  // Create Marina Group
+  const marinaGroup = await prisma.marinaGroup.upsert({
+    where: { id: 'marina-group-1' },
+    update: {},
+    create: {
+      id: 'marina-group-1',
+      name: 'Harbor View Marina Group',
+      description: 'Premium marina management group serving the coastal community'
+    }
+  })
+
+  // Create Marina
+  const marina = await prisma.marina.upsert({
+    where: { id: 'marina-1' },
+    update: {},
+    create: {
+      id: 'marina-1',
+      name: 'Harbor View Marina',
+      code: 'HVM001',
+      address: '123 Harbor Drive, Coastal City, CA 90210',
+      phone: '+1 (555) 123-4567',
+      email: 'info@harborviewmarina.com',
+      timezone: 'America/Los_Angeles',
+      isActive: true,
+      isOnline: true,
+      marinaGroupId: marinaGroup.id
+    }
+  })
+
+  // Create Demo User
+  const user = await prisma.user.upsert({
+    where: { id: 'user-1' },
+    update: {},
+    create: {
+      id: 'user-1',
+      email: 'demo@marina.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      phone: '+1 (555) 987-6543',
+      isActive: true,
+      marinaId: marina.id,
+      marinaGroupId: marinaGroup.id
+    }
+  })
+
+  // Create User Roles
+  await prisma.userRole.upsert({
+    where: { id: 'role-1' },
+    update: {},
+    create: {
+      id: 'role-1',
+      userId: user.id,
+      role: 'STAFF_FRONT_DESK',
+      marinaId: marina.id
+    }
+  })
+
+  await prisma.userRole.upsert({
+    where: { id: 'role-2' },
+    update: {},
+    create: {
+      id: 'role-2',
+      userId: user.id,
+      role: 'ADMIN',
+      marinaId: marina.id
+    }
+  })
+
+  // Create Demo Owners
+  const owner1 = await prisma.owner.upsert({
+    where: { id: 'owner-1' },
+    update: {},
+    create: {
+      id: 'owner-1',
+      externalId: 'EXT001',
+      firstName: 'John',
+      lastName: 'Smith',
+      email: 'john.smith@email.com',
+      phone: '+1 (555) 111-2222',
+      address: '456 Ocean Blvd, Beach City, CA 90211',
+      isActive: true,
+      marinaId: marina.id
+    }
+  })
+
+  const owner2 = await prisma.owner.upsert({
+    where: { id: 'owner-2' },
+    update: {},
+    create: {
+      id: 'owner-2',
+      externalId: 'EXT002',
+      firstName: 'Sarah',
+      lastName: 'Johnson',
+      email: 'sarah.johnson@email.com',
+      phone: '+1 (555) 333-4444',
+      address: '789 Coastal Ave, Seaside, CA 90212',
+      isActive: true,
+      marinaId: marina.id
+    }
+  })
+
+  // Create Demo Boats
+  const boat1 = await prisma.boat.upsert({
+    where: { id: 'boat-1' },
+    update: {},
+    create: {
+      id: 'boat-1',
+      externalId: 'BOAT001',
+      name: 'Sea Breeze',
+      registration: 'FL1234AB',
+      length: 32,
+      beam: 12,
+      draft: 4,
+      isActive: true,
+      marinaId: marina.id,
+      ownerId: owner1.id
+    }
+  })
+
+  const boat2 = await prisma.boat.upsert({
+    where: { id: 'boat-2' },
+    update: {},
+    create: {
+      id: 'boat-2',
+      externalId: 'BOAT002',
+      name: 'Ocean Explorer',
+      registration: 'FL5678CD',
+      length: 45,
+      beam: 14,
+      draft: 5,
+      isActive: true,
+      marinaId: marina.id,
+      ownerId: owner2.id
+    }
+  })
+
+  // Create Demo Berths
+  const berth1 = await prisma.berth.upsert({
+    where: { id: 'berth-1' },
+    update: {},
+    create: {
+      id: 'berth-1',
+      externalId: 'BERTH001',
+      berthNumber: 'A-12',
+      length: 35,
+      beam: 15,
+      isAvailable: false,
+      isActive: true,
+      marinaId: marina.id
+    }
+  })
+
+  const berth2 = await prisma.berth.upsert({
+    where: { id: 'berth-2' },
+    update: {},
+    create: {
+      id: 'berth-2',
+      externalId: 'BERTH002',
+      berthNumber: 'B-15',
+      length: 50,
+      beam: 16,
+      isAvailable: false,
+      isActive: true,
+      marinaId: marina.id
+    }
+  })
+
+  // Create Demo Contracts
+  await prisma.contract.upsert({
+    where: { id: 'contract-1' },
+    update: {},
+    create: {
+      id: 'contract-1',
+      externalId: 'CTR001',
+      contractNumber: 'CTR-2024-001',
+      startDate: new Date('2024-01-01'),
+      endDate: new Date('2024-12-31'),
+      status: 'ACTIVE',
+      monthlyRate: 850.00,
+      marinaId: marina.id,
+      ownerId: owner1.id,
+      boatId: boat1.id,
+      berthId: berth1.id
+    }
+  })
+
+  await prisma.contract.upsert({
+    where: { id: 'contract-2' },
+    update: {},
+    create: {
+      id: 'contract-2',
+      externalId: 'CTR002',
+      contractNumber: 'CTR-2024-002',
+      startDate: new Date('2024-02-01'),
+      endDate: new Date('2024-07-31'),
+      status: 'ACTIVE',
+      monthlyRate: 1200.00,
+      marinaId: marina.id,
+      ownerId: owner2.id,
+      boatId: boat2.id,
+      berthId: berth2.id
+    }
+  })
+
+  console.log('✅ Database seeding completed successfully!')
+  console.log(`   - Marina Group: ${marinaGroup.name}`)
+  console.log(`   - Marina: ${marina.name}`)
+  console.log(`   - User: ${user.firstName} ${user.lastName} (${user.email})`)
+  console.log(`   - Owners: ${owner1.firstName} ${owner1.lastName}, ${owner2.firstName} ${owner2.lastName}`)
+  console.log(`   - Boats: ${boat1.name}, ${boat2.name}`)
+  console.log(`   - Berths: ${berth1.berthNumber}, ${berth2.berthNumber}`)
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error during seeding:', e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

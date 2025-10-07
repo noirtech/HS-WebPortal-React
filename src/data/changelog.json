@@ -1,0 +1,57 @@
+{
+  "version": "1.2.0",
+  "releaseDate": "2024-01-15T10:00:00Z",
+  "changes": [
+    {
+      "id": "cl-001",
+      "category": "New Features",
+      "title": "Change Log System",
+      "description": "Implemented a comprehensive change log system with dashboard button, modal display, and settings management. Users can now track all updates and changes to the marina portal.",
+      "location": "/dashboard, /settings",
+      "impact": "Users will see a new 'What's New' button on the dashboard and can access detailed change information through settings.",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "priority": "high"
+    },
+    {
+      "id": "cl-002",
+      "category": "UI/UX",
+      "title": "Settings Page Reorganization",
+      "description": "Restructured the settings page into logical sections for better organization and user experience. Settings are now grouped by functionality.",
+      "location": "/settings",
+      "impact": "Settings are now easier to find and navigate, with clear section headers and improved layout.",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "priority": "medium"
+    },
+    {
+      "id": "cl-003",
+      "category": "Improvements",
+      "title": "Enhanced Data Source Management",
+      "description": "Improved the data source toggle system with better state management and user preference storage.",
+      "location": "/settings, /dashboard",
+      "impact": "More reliable switching between mock and live data, with persistent user preferences.",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "priority": "medium"
+    },
+    {
+      "id": "cl-004",
+      "category": "Bug Fixes",
+      "title": "Authentication Session Handling",
+      "description": "Fixed issues with user session management and role-based access control across the application.",
+      "location": "Global",
+      "impact": "More reliable user authentication and consistent access to features based on user roles.",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "priority": "high"
+    },
+    {
+      "id": "cl-005",
+      "category": "Security",
+      "title": "Enhanced Input Validation",
+      "description": "Implemented comprehensive Zod schema validation for all forms and user inputs.",
+      "location": "All forms",
+      "impact": "Better security and data integrity with proper input sanitization and validation.",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "priority": "high"
+    }
+  ]
+}
+

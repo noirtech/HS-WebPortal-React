@@ -1,0 +1,438 @@
+// This is your corrected Prisma schema file for SQL Server
+// Updated to match the actual database structure
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TENANCY & AUTHENTICATION
+// ============================================================================
+
+model MarinaGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  marinas     Marina[]
+  users       User[]
+  
+  @@map("marina_groups")
+}
+
+model Marina {
+  id            String   @id @default(cuid())
+  name          String
+  code          String   @unique // Unique marina identifier
+  address       String?
+  phone         String?
+  email         String?
+  timezone      String   @default("UTC")
+  isActive      Boolean  @default(true)
+  isOnline      Boolean  @default(true) // Connection status to on-prem SQL Server
+  lastSyncAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaGroupId String
+  marinaGroup   MarinaGroup @relation(fields: [marinaGroupId], references: [id])
+  
+  // Relationships
+  users         User[]
+  userRoles     UserRole[]
+  owners        Owner[]
+  boats         Boat[]
+  contracts     Contract[]
+  berths        Berth[]
+  bookings      Booking[]
+  invoices      Invoice[]
+  payments      Payment[]
+  workOrders    WorkOrder[]
+  pendingOps    PendingOperation[]
+  auditEvents   AuditEvent[]
+  notifications Notification[]
+  
+  @@map("marinas")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  firstName   String
+  lastName    String
+  phone       String?
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String?
+  marinaGroupId String?
+  
+  // Relationships
+  marina      Marina? @relation(fields: [marinaId], references: [id])
+  marinaGroup MarinaGroup? @relation(fields: [marinaGroupId], references: [id])
+  
+  // Role-based access control
+  roles       UserRole[]
+  auditEvents AuditEvent[]
+  notifications Notification[]
+  pendingOperations PendingOperation[]
+  
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      Role
+  marinaId  String? // null for group-level roles
+  createdAt DateTime @default(now())
+  
+  // Foreign Keys
+  user      User @relation(fields: [userId], references: [id])
+  marina    Marina? @relation(fields: [marinaId], references: [id])
+  
+  @@map("user_roles")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF_FRONT_DESK
+  STAFF_MAINTENANCE
+  STAFF_SECURITY
+  CUSTOMER
+}
+
+// ============================================================================
+// CORE BUSINESS MODELS
+// ============================================================================
+
+model Owner {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  
+  // Relationships
+  boats       Boat[]
+  contracts   Contract[]
+  invoices    Invoice[]
+  payments    Payment[]
+  
+  @@map("owners")
+}
+
+model Boat {
+  id          String   @id @default(cuid())
+  name        String
+  registration String?
+  length      Float
+  beam        Float?
+  draft       Float?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  ownerId     String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  owner       Owner   @relation(fields: [ownerId], references: [id])
+  
+  // Relationships
+  contracts   Contract[]
+  bookings    Booking[]
+  
+  @@map("boats")
+}
+
+model Berth {
+  id          String   @id @default(cuid())
+  externalId  String?  // Additional field found in actual database
+  berthNumber String   // Actual field name in database (not 'code')
+  name        String?
+  length      Float
+  beam        Float?
+  // depth field removed - doesn't exist in actual database
+  isAvailable Boolean  @default(true) // Actual field name in database
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  
+  // Relationships
+  contracts   Contract[]
+  bookings    Booking[]
+  
+  @@map("berths")
+}
+
+model Contract {
+  id          String   @id @default(cuid())
+  contractNumber String @unique
+  startDate   DateTime
+  endDate     DateTime
+  monthlyRate Float
+  status      ContractStatus @default(ACTIVE)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  berthId     String
+  boatId      String
+  ownerId     String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  berth       Berth   @relation(fields: [berthId], references: [id])
+  boat        Boat    @relation(fields: [boatId], references: [id])
+  owner       Owner   @relation(fields: [ownerId], references: [id])
+  
+  // Relationships
+  invoices    Invoice[]
+  
+  @@map("contracts")
+}
+
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  totalCost   Float
+  status      BookingStatus @default(CONFIRMED)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  berthId     String
+  boatId      String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  berth       Berth   @relation(fields: [berthId], references: [id])
+  boat        Boat    @relation(fields: [boatId], references: [id])
+  
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  PENDING
+  CANCELLED
+  COMPLETED
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  externalId  String   @unique // For external system integration
+  invoiceNumber String @unique
+  issueDate   DateTime
+  dueDate     DateTime
+  subtotal    Float    @default(0) // Add subtotal field
+  tax         Float    @default(0)
+  total       Float
+  status      InvoiceStatus @default(DRAFT) // Update default status
+  description String   @db.VarChar(500) // Add description field
+  notes       String?  @db.VarChar(1000) // Increase notes field size
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  ownerId     String
+  contractId  String?
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  owner       Owner   @relation(fields: [ownerId], references: [id])
+  contract    Contract? @relation(fields: [contractId], references: [id])
+  
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  externalId  String   @unique // For external system integration
+  paymentNumber String @unique
+  amount      Float
+  paymentDate DateTime
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  ownerId     String
+  invoiceId   String?
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  owner       Owner   @relation(fields: [ownerId], references: [id])
+  invoice     Invoice? @relation(fields: [invoiceId], references: [id])
+  
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  ONLINE_PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+model WorkOrder {
+  id          String   @id @default(cuid())
+  externalId  String   @unique // For external system integration
+  workOrderNumber String @unique
+  title       String
+  description String?
+  priority    WorkOrderPriority @default(MEDIUM)
+  status      WorkOrderStatus @default(OPEN)
+  assignedTo  String?
+  estimatedHours Float?
+  actualHours Float?
+  startDate   DateTime?
+  completedDate DateTime?
+  totalCost   Float @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String
+  marina      Marina  @relation(fields: [marinaId], references: [id])
+  
+  @@map("work_orders")
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model PendingOperation {
+  id          String   @id @default(cuid())
+  operationType String
+  data        String   // JSON string of operation data
+  status      PendingOperationStatus @default(PENDING)
+  retryCount  Int      @default(0)
+  lastRetryAt DateTime?
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  marinaId    String?
+  userId      String?
+  marina      Marina? @relation(fields: [marinaId], references: [id])
+  user        User? @relation(fields: [userId], references: [id])
+  
+  @@map("pending_operations")
+}
+
+enum PendingOperationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// AUDIT & NOTIFICATIONS
+// ============================================================================
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  eventType   String
+  entityType  String
+  entityId    String
+  userId      String
+  changes     String?  // JSON string of changes
+  metadata    String?  // Additional event metadata
+  createdAt   DateTime @default(now())
+  
+  // Foreign Keys
+  marinaId    String?
+  marina      Marina? @relation(fields: [marinaId], references: [id])
+  user        User @relation(fields: [userId], references: [id])
+  
+  @@map("audit_events")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  metadata    String?  // JSON string of notification metadata
+  createdAt   DateTime @default(now())
+  
+  // Foreign Keys
+  marinaId    String?
+  userId      String?
+  marina      Marina? @relation(fields: [marinaId], references: [id])
+  user        User @relation(fields: [userId], references: [id])
+  
+  @@map("notifications")
+}

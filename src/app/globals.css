@@ -1,0 +1,715 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   DOCKWALK STYLES
+   ============================================================================ */
+
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+.dockwalk-container {
+  transition: all 0.3s ease;
+}
+
+.dockwalk-container.mobile-mode .berth-list {
+  display: none;
+}
+
+.dockwalk-container.mobile-mode .lg\:col-span-2 {
+  grid-column: span 3;
+}
+
+/* Dockwalk Grid Styling */
+.marina-grid {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.1) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.berth-cell {
+  aspect-ratio: 1;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.berth-cell:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.berth-cell.selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+}
+
+/* Mobile Mode Styles */
+@media (max-width: 1024px) {
+  .dockwalk-container .berth-list {
+    display: none;
+  }
+  
+  .dockwalk-container .lg\:col-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* Fullscreen Mode */
+.dockwalk-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: white;
+  overflow: auto;
+}
+
+/* Berth Status Colors */
+.berth-status-occupied { background-color: #3b82f6; }
+.berth-status-available { background-color: #10b981; }
+.berth-status-reserved { background-color: #f59e0b; }
+.berth-status-maintenance { background-color: #ef4444; }
+
+/* ============================================================================
+   EXISTING STYLES
+   ============================================================================ */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Form focus states */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  @apply ring-2 ring-blue-500 ring-opacity-50 border-blue-500;
+}
+
+/* Table styles */
+.table-container {
+  @apply overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg;
+}
+
+.table {
+  @apply min-w-full divide-y divide-gray-300;
+}
+
+.table-header {
+  @apply bg-gray-50;
+}
+
+.table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table-body {
+  @apply bg-white divide-y divide-gray-200;
+}
+
+.table-row {
+  @apply hover:bg-gray-50;
+}
+
+.table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-expired {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-cancelled {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Button variants */
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.btn-secondary {
+  @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+}
+
+.btn-outline {
+  @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white overflow-hidden shadow rounded-lg;
+}
+
+.card-header {
+  @apply px-6 py-4 border-b border-gray-200;
+}
+
+.card-title {
+  @apply text-lg font-medium text-gray-900;
+}
+
+.card-content {
+  @apply px-6 py-4;
+}
+
+/* Modal styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 transition-opacity;
+}
+
+.modal-content {
+  @apply relative bg-white rounded-lg shadow-xl transform transition-all;
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  .table-container {
+    @apply -mx-4;
+  }
+  
+  .card {
+    @apply rounded-none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break {
+    page-break-before: always;
+  }
+}
+
+/* Enhanced Boat Name Styling for Dockwalk */
+.berth-cell .boat-name {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.berth-cell .boat-name-container {
+  transition: all 0.2s ease-in-out;
+}
+
+.berth-cell:hover .boat-name-container {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Improved boat name readability */
+.boat-name-badge {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Dock Walk Test 2 - Mobile Optimized Styles */
+.dock-walk-test-2-container {
+  @apply min-h-screen bg-gray-50 flex flex-col;
+}
+
+/* Device-specific responsive containers */
+.dock-walk-test-2-container.mobile {
+  @apply max-w-none mx-auto px-2;
+}
+
+.dock-walk-test-2-container.tablet {
+  @apply max-w-none mx-auto px-4;
+}
+
+.dock-walk-test-2-container.desktop {
+  @apply max-w-none px-6;
+}
+
+.dock-walk-test-2-container.fullscreen {
+  @apply fixed inset-0 z-50 bg-white;
+}
+
+/* Enhanced dock walk mode styles */
+.dock-walk-test-2-container.dock-walk-mode {
+  @apply bg-blue-50;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .mobile-header {
+  @apply bg-gradient-to-r from-blue-700 to-indigo-800;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .berth-card {
+  @apply shadow-lg border-2 border-blue-200;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .berth-card:hover {
+  @apply shadow-xl border-blue-300 transform -translate-y-2;
+}
+
+/* Gesture support and touch feedback */
+.dock-walk-test-2-container {
+  @apply touch-pan-y touch-pinch-zoom;
+}
+
+.dock-walk-test-2-container .berth-card {
+  @apply touch-manipulation;
+}
+
+/* Enhanced transitions for all interactive elements */
+.dock-walk-test-2-container * {
+  @apply transition-all duration-200 ease-out;
+}
+
+.dock-walk-test-2-container .berth-card {
+  @apply transition-all duration-300 ease-out;
+}
+
+.dock-walk-test-2-container button {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Responsive header */
+.mobile-header {
+  @apply sticky top-0 z-10;
+}
+
+.mobile-bottom-nav {
+  @apply sticky bottom-0 z-10;
+}
+
+/* Compact header for small screens */
+@media (max-width: 480px) {
+  .mobile-header {
+    @apply py-2;
+  }
+  
+  .mobile-bottom-nav {
+    @apply py-2;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .mobile-header {
+    @apply py-3;
+  }
+  
+  .mobile-bottom-nav {
+    @apply py-3;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-header {
+    @apply py-4;
+  }
+  
+  .mobile-bottom-nav {
+    @apply py-4;
+  }
+}
+
+/* Responsive berth cards */
+.berth-card {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.berth-card:hover {
+  @apply transform -translate-y-1 shadow-xl;
+}
+
+.berth-card:active {
+  @apply transform scale-95;
+}
+
+/* Device-specific responsive breakpoints */
+@media (max-width: 375px) {
+  .dock-walk-test-2-container.mobile {
+    @apply px-1;
+  }
+}
+
+@media (min-width: 376px) and (max-width: 414px) {
+  .dock-walk-test-2-container.mobile {
+    @apply px-2;
+  }
+}
+
+@media (min-width: 415px) and (max-width: 768px) {
+  .dock-walk-test-2-container.tablet {
+    @apply px-3;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dock-walk-test-2-container.tablet {
+    @apply px-4;
+  }
+}
+
+@media (min-width: 1025px) {
+  .dock-walk-test-2-container.desktop {
+    @apply px-6;
+  }
+}
+
+/* Mobile-first responsive grid with portrait optimization */
+@media (max-width: 640px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-2 gap-2;
+  }
+  
+  .mobile-header {
+    @apply px-2;
+  }
+  
+  .mobile-bottom-nav {
+    @apply px-2;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-3 gap-3;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-4 gap-4;
+  }
+}
+
+@media (min-width: 1025px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-5 gap-6;
+  }
+}
+
+/* Portrait orientation optimization */
+@media (orientation: portrait) and (max-width: 768px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-2 gap-2;
+  }
+  
+  .dock-walk-test-2-container.mobile {
+    @apply px-1;
+  }
+  
+  .dock-walk-test-2-container.tablet {
+    @apply px-2;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 768px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-3 gap-3;
+  }
+}
+
+/* Ultra-compact mobile optimization */
+@media (max-width: 360px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-1 gap-1;
+  }
+  
+  .dock-walk-test-2-container {
+    @apply px-1;
+  }
+  
+  .berth-card {
+    @apply min-h-[100px] p-2;
+  }
+}
+
+/* Compact mobile optimization */
+@media (min-width: 361px) and (max-width: 480px) {
+  .dock-walk-test-2-container .grid {
+    @apply grid-cols-2 gap-1.5;
+  }
+  
+  .dock-walk-test-2-container {
+    @apply px-1.5;
+  }
+  
+  .berth-card {
+    @apply min-h-[110px] p-2.5;
+  }
+}
+
+/* Touch-friendly button sizes */
+.berth-card button {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* Optimized card sizing for different screen sizes */
+@media (max-width: 480px) {
+  .berth-card {
+    @apply min-h-[120px];
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .berth-card {
+    @apply min-h-[140px];
+  }
+}
+
+@media (min-width: 769px) {
+  .berth-card {
+    @apply min-h-[160px];
+  }
+}
+
+/* Smooth transitions for view mode changes */
+.dock-walk-test-2-container {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Responsive search and filter optimizations */
+@media (max-width: 480px) {
+  .dock-walk-test-2-container input[type="text"] {
+    @apply text-sm py-2;
+  }
+  
+  .dock-walk-test-2-container .progress-bar {
+    @apply w-12 h-1;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .dock-walk-test-2-container input[type="text"] {
+    @apply text-base py-2.5;
+  }
+  
+  .dock-walk-test-2-container .progress-bar {
+    @apply w-16 h-1.5;
+  }
+}
+
+@media (min-width: 769px) {
+  .dock-walk-test-2-container input[type="text"] {
+    @apply text-base py-3;
+  }
+  
+  .dock-walk-test-2-container .progress-bar {
+    @apply w-20 h-2;
+  }
+}
+
+/* Fullscreen optimizations */
+.dock-walk-test-2-container.fullscreen .mobile-header {
+  @apply rounded-none;
+}
+
+.dock-walk-test-2-container.fullscreen .mobile-bottom-nav {
+  @apply rounded-none;
+}
+
+/* Enhanced dock walk mode specific styles */
+.dock-walk-test-2-container.dock-walk-mode .mobile-header {
+  @apply shadow-2xl;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .berth-card {
+  @apply bg-white shadow-lg border-2;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .berth-card:hover {
+  @apply shadow-2xl border-blue-400;
+}
+
+/* Gesture feedback animations */
+@keyframes swipeFeedback {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(10px); }
+  100% { transform: translateX(0); }
+}
+
+.dock-walk-test-2-container.swipe-feedback {
+  animation: swipeFeedback 0.3s ease-out;
+}
+
+/* Enhanced button states for dock walk mode */
+.dock-walk-test-2-container.dock-walk-mode button {
+  @apply shadow-md;
+}
+
+.dock-walk-test-2-container.dock-walk-mode button:hover {
+  @apply shadow-lg transform -translate-y-0.5;
+}
+
+.dock-walk-test-2-container.dock-walk-mode button:active {
+  @apply transform scale-95 shadow-sm;
+}
+
+/* Progress bar enhancements for dock walk mode */
+.dock-walk-test-2-container.dock-walk-mode .progress-bar {
+  @apply shadow-inner;
+}
+
+.dock-walk-test-2-container.dock-walk-mode .progress-bar > div {
+  @apply shadow-sm;
+}
+
+/* Search input enhancements for dock walk mode */
+.dock-walk-test-2-container.dock-walk-mode input[type="text"] {
+  @apply shadow-md border-2 border-blue-300;
+}
+
+.dock-walk-test-2-container.dock-walk-mode input[type="text"]:focus {
+  @apply shadow-lg border-blue-400 ring-2 ring-blue-200;
+}
+
+/* Full-screen mode indicator styling */
+.dock-walk-test-2-container.dock-walk-mode .mobile-header > div:last-child {
+  @apply animate-pulse;
+}
+
+/* Enhanced transitions for dock walk mode */
+.dock-walk-test-2-container.dock-walk-mode * {
+  @apply transition-all duration-300 ease-out;
+}
+
+/* Mobile gesture support */
+@media (hover: none) and (pointer: coarse) {
+  .dock-walk-test-2-container .berth-card {
+    @apply active:scale-95;
+  }
+  
+  .dock-walk-test-2-container button {
+    @apply active:scale-95;
+  }
+}
+
+/* High contrast mode support for accessibility */
+@media (prefers-contrast: high) {
+  .dock-walk-test-2-container.dock-walk-mode .berth-card {
+    @apply border-2 border-black;
+  }
+  
+  .dock-walk-test-2-container.dock-walk-mode .mobile-header {
+    @apply border-b-2 border-white;
+  }
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dock-walk-test-2-container * {
+    @apply transition-none;
+  }
+  
+  .dock-walk-test-2-container .berth-card:hover {
+    @apply transform-none;
+  }
+}
+
+
